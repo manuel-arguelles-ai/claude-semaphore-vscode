@@ -18,9 +18,13 @@ VS Code remembers where you put it.
 
 ## Release status
 
+**1.1.3** shows Claude sessions that finished their turn but still have a background shell or agent running as working (green) instead of idle/finished.
+
+**1.1.2** renames the extension to Claude + Codex + OpenCode Semáforo.
+
 **1.1.1** adds OpenCode as a third provider: live sessions are read from its local SQLite database without native dependencies; start/resume/fork use the installed `opencode` CLI and pending permission prompts cannot be detected (documented limitation).
 
-**1.1.0** added organization, diagnostics and explicit session management: project grouping, search and filters, favorites, local observation history, opt-in lifecycle hooks, and start/resume/fork of Claude and Codex plus Git worktrees. Native acceptance was completed on macOS; Windows and Linux have not been verified.
+**1.1.0** added organization, diagnostics and explicit session management: project grouping, search and filters, favorites, local observation history, opt-in lifecycle hooks, and start/resume/fork of Claude and Codex plus Git worktrees. Native acceptance was completed on macOS.
 
 1.0.0 added local Codex monitoring alongside Claude, including TUI user sessions
 now recorded with `source: "vscode"`. Automated verification and local in-editor
@@ -72,7 +76,7 @@ remain separate rows. Terminal reveal follows up to 12 parent processes, includi
 Node wrappers. Folder fallback is allowed only when it identifies one terminal.
 
 Codex support requires **macOS or Linux with `lsof` on PATH** (tested on macOS with
-Codex CLI 0.154.0 and TUI/app-server sessions from 0.160.0–0.160.1). Windows shows a warning and continues displaying Claude.
+Codex CLI 0.154.0 and TUI/app-server sessions from 0.160.0–0.160.1). On Windows, Claude sessions keep working and Codex shows a notice.
 
 For OpenCode, live `opencode` processes are discovered with `lsof` and `ps`; the
 session table and event tail are read through `sqlite3 -readonly` from the shared

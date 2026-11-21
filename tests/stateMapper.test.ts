@@ -15,7 +15,7 @@ describe('mapStatus', () => {
   });
   it('maps unknown values to unknown', () => expect(mapStatus('wat')).toBe('unknown'));
   // Decision: a session sitting at a shell prompt counts as stopped (red).
-  it('maps shell to stopped', () => expect(mapStatus('shell')).toBe('stopped'));
+  it('maps shell (background shell still running) to running', () => expect(mapStatus('shell')).toBe('running'));
 });
 
 describe('summarize', () => {

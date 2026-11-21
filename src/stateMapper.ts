@@ -7,7 +7,8 @@ const STATUS_MAP: Record<string, SemaphoreState> = {
   blocked: 'needsInput',
   idle: 'stopped',
   paused: 'stopped',
-  shell: 'stopped',
+  // Claude reports "shell" when the turn ended but a background shell/agent is still running: still working.
+  shell: 'running',
   error: 'error',
   failed: 'error',
 };

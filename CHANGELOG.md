@@ -1,3 +1,7 @@
+# 1.1.3
+
+- Claude sessions reporting `shell` (turn finished but a background shell or agent is still running) are now shown as working (green) instead of idle/finished.
+
 # 1.1.1
 
 - Add OpenCode as a third provider: live sessions are read from its local SQLite database (`~/.local/share/opencode/opencode.db`) without native dependencies; running comes only from `step-start` events and stopped from completed assistant messages, with an honest bootstrap otherwise.

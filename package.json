@@ -1,8 +1,8 @@
 {
   "name": "claude-semaphore",
-  "displayName": "Claude + Codex + OpenCode + Command Code Semáforo",
-  "description": "Organize, inspect and manage local Claude Code, Codex, OpenCode and Command Code sessions in VS Code, with optional lifecycle signals.",
-  "version": "1.1.4",
+  "displayName": "Claude + Codex + OpenCode + Command Code + OpenClaw Semáforo",
+  "description": "Organize, inspect and manage local Claude Code, Codex, OpenCode, Command Code and OpenClaw sessions in VS Code, with optional lifecycle signals.",
+  "version": "1.2.0",
   "publisher": "manuelarguelles",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -24,7 +24,8 @@
     "semaphore",
     "traffic light",
     "codex",
-    "command-code"
+    "command-code",
+    "openclaw"
   ],
   "engines": {
     "vscode": "^1.85.0"
@@ -43,7 +44,7 @@
       "activitybar": [
         {
           "id": "claudeSemaphore",
-          "title": "Claude + Codex + OpenCode + Command Code Semáforo",
+          "title": "Claude + Codex + OpenCode + Command Code + OpenClaw Semáforo",
           "icon": "media/icon.svg"
         }
       ]
@@ -57,7 +58,7 @@
       ]
     },
     "configuration": {
-      "title": "Claude + Codex + OpenCode + Command Code Semáforo",
+      "title": "Claude + Codex + OpenCode + Command Code + OpenClaw Semáforo",
       "properties": {
         "claudeSemaphore.theme": {
           "type": "string",
@@ -128,6 +129,16 @@
           "type": "string",
           "default": "command-code",
           "description": "Ruta al ejecutable de command-code. Se detecta desde PATH y ubicaciones comunes."
+        },
+        "claudeSemaphore.openclaw.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show local OpenClaw sessions (macOS/Linux; requires sqlite3). Reads its own databases only; rows group by agent and yellow means a pending operator approval."
+        },
+        "claudeSemaphore.openclaw.windowMs": {
+          "type": "number",
+          "default": 10,
+          "description": "Ventana de actividad (minutos) para considerar viva una sesión de OpenClaw abierta."
         },
         "claudeSemaphore.hooks.nodePath": {
           "type": "string",

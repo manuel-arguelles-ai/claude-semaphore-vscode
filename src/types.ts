@@ -1,4 +1,4 @@
-export type Provider = 'claude' | 'codex' | 'opencode' | 'commandcode';
+export type Provider = 'claude' | 'codex' | 'opencode' | 'commandcode' | 'openclaw';
 export type SemaphoreState = 'running' | 'needsInput' | 'stopped' | 'error' | 'unknown';
 
 export type ThemeName = 'classic' | 'colorblind' | 'highContrast';

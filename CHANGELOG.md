@@ -1,3 +1,12 @@
+# 1.2.0
+
+- Add OpenClaw as a fifth provider: sessions are read from its own SQLite databases (`~/.openclaw/state/openclaw.sqlite` for the agent list and pending approvals, plus one `openclaw-agent.sqlite` per agent). No process scan per session: the gateway is a single process and only supplies the pid.
+- State is exact where OpenClaw is explicit: a pending `operator_approvals` row → needs input; `status` running/done/failed/killed/timeout → working/idle/error/idle. An open session with activity inside the window is working; a silent one is idle.
+- Rows group **by agent** (`OpenClaw · main`, `OpenClaw · nix-groq`) because OpenClaw has no per-session working directory.
+- Deduplicates by session id per agent, which collapses cron's `…:cron:<id>` and `…:cron:<id>:run:<uuid>` into one row.
+- Approvals are scoped by session key: the same session id in another agent's database never lights up.
+- New settings `openclaw.enabled` and `openclaw.windowMs` (activity window in minutes).
+
 # 1.1.4
 
 - Add Command Code as a fourth provider: live sessions are read from its local transcripts (`~/.commandcode/projects/<slug>/<session-id>.jsonl`) and paired with their process by start time, with a most-recent-in-cwd fallback for resumed sessions.

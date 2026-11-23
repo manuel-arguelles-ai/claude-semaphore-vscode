@@ -23,6 +23,11 @@ export function formatTooltip(s: SessionState, label: string, hasTerminal: boole
     lines.push('Solo se distinguen turno en curso, finalizado y pregunta explícita pendiente.');
     if (s.state === 'unknown') lines.push('No hay un registro suficiente para determinar el estado.');
   }
+  if (s.provider === 'openclaw') {
+    lines.push('OpenClaw · estado leído de su base de datos local (session_windows)');
+    lines.push('Amarillo = aprobación de operador pendiente (señal exacta).');
+    lines.push('Una sesión abierta sin actividad reciente se muestra inactiva.');
+  }
   if (!hasTerminal) {
     lines.push('(sin terminal en esta ventana)');
   }

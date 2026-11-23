@@ -8,15 +8,23 @@ export const stateLabels: Record<SemaphoreState, string> = {
   running: 'trabajando', needsInput: 'necesita respuesta', stopped: 'inactivo / finalizado', error: 'error observado', unknown: 'desconocido',
 };
 export const providerLabels: Record<Provider, string> = {
-  claude: 'Claude', codex: 'Codex', opencode: 'OpenCode', commandcode: 'Command Code',
+  claude: 'Claude', codex: 'Codex', opencode: 'OpenCode', commandcode: 'Command Code', openclaw: 'OpenClaw',
 };
+
+const OPENCLAW_PREFIX = 'openclaw:';
+
+/** OpenClaw has no working directory per session, so rows group by agent instead. */
+export function groupDisplayName(cwd: string): string {
+  if (cwd.startsWith(OPENCLAW_PREFIX)) return `OpenClaw · ${cwd.slice(OPENCLAW_PREFIX.length) || 'agente'}`;
+  return cwd;
+}
 const priority: Record<SemaphoreState, number> = { needsInput: 0, error: 1, running: 2, stopped: 3, unknown: 4 };
 export function presentSessions(sessions: SessionState[], options: ViewOptions, favorites: ReadonlySet<string>): ProjectGroup[] {
   const query = options.query.trim().toLocaleLowerCase();
   const filtered = sessions.filter(s => (!options.provider || (s.provider ?? 'claude') === options.provider)
     && (!options.state || s.state === options.state)
     && (!options.favoritesOnly || favorites.has(persistentSessionKey(s)))
-    && (!query || [s.title, s.cwd, s.provider ?? 'claude'].join('\n').toLocaleLowerCase().includes(query)));
+    && (!query || [s.title, groupDisplayName(s.cwd), s.provider ?? 'claude'].join('\n').toLocaleLowerCase().includes(query)));
   const compare = (a: SessionState, b: SessionState) => priority[a.state] - priority[b.state]
     || Number(favorites.has(persistentSessionKey(b))) - Number(favorites.has(persistentSessionKey(a)))
     || a.title.localeCompare(b.title) || sessionKey(a).localeCompare(sessionKey(b));

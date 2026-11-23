@@ -5,6 +5,7 @@ import * as path from 'path';
 import { CodexReader, discoverCodexRollouts, OpenRollout } from './codexSessions';
 import { OpenCodeReader, discoverOpenCodeProcesses, OpenCodeProcess } from './opencodeSessions';
 import { CommandCodeReader, discoverCommandCodeProcesses, CommandCodeProcess } from './commandcodeSessions';
+import { OpenClawReader, discoverOpenClawGateway } from './openclawSessions';
 import { sessionKey, persistentSessionKey } from './sessionIdentity';
 import { SessionTree } from './sessionTree';
 import { integrateSessions } from './sessionIntegration';
@@ -133,6 +134,12 @@ export function activate(context: vscode.ExtensionContext): void {
   let nextCommandCodeDiscovery = 0;
   let commandcodeError = false;
   let warnedCommandCode = false;
+
+  const openclawReader = new OpenClawReader();
+  let openclawPid: number | undefined;
+  let nextOpenClawDiscovery = 0;
+  let openclawError = false;
+  let warnedOpenClaw = false;
   let refreshing = false;
   let disposed = false;
   context.subscriptions.push({ dispose: () => { disposed = true; } });
@@ -234,6 +241,41 @@ export function activate(context: vscode.ExtensionContext): void {
       } else {
         commandcodeProcesses = []; commandcodeError = commandcodeEnabled && process.platform === 'win32';
       }
+
+      const openclawEnabled = vscode.workspace.getConfiguration('claudeSemaphore').get<boolean>('openclaw.enabled', true);
+      if (openclawEnabled && process.platform !== 'win32') {
+        if (Date.now() >= nextOpenClawDiscovery) {
+          nextOpenClawDiscovery = Date.now() + 10000;
+          try {
+            openclawPid = await discoverOpenClawGateway();
+          } catch {
+            openclawPid = undefined;
+          }
+        }
+        if (openclawPid === undefined) {
+          openclawPid = await discoverOpenClawGateway().catch(() => undefined);
+        }
+        if (openclawPid !== undefined && isAlive(openclawPid)) {
+          try {
+            const openclawSessions = await openclawReader.read(
+              openclawPid,
+              vscode.workspace.getConfiguration('claudeSemaphore').get<number>('openclaw.windowMs', 10) * 60_000,
+            );
+            sessions.push(...openclawSessions);
+            openclawError = false;
+          } catch {
+            openclawError = true;
+            if (!warnedOpenClaw) {
+              warnedOpenClaw = true;
+              vscode.window.showWarningMessage('Semáforo: OpenClaw está activo pero no se pudo leer su base de datos. Los demás proveedores siguen disponibles.');
+            }
+          }
+        } else {
+          openclawError = false;
+        }
+      } else {
+        openclawPid = undefined; openclawError = openclawEnabled && process.platform === 'win32';
+      }
       sessions.sort((a, b) => a.title.localeCompare(b.title) || sessionKey(a).localeCompare(sessionKey(b)));
       if (disposed) return;
       const events = await readSessionEvents(integration.eventsDirectory, Date.now(), sessions);
@@ -261,7 +303,7 @@ export function activate(context: vscode.ExtensionContext): void {
       if (sum.unknown) statusBar.text += ` $(question)${sum.unknown}`;
       if (sum.error) statusBar.text += ` ${styleFor(theme, 'error').summaryGlyph}${sum.error}`;
       if (codexError) statusBar.text += ' $(warning)';
-      statusBar.tooltip = `Claude + Codex + OpenCode + Command Code Semáforo — clic para ver las sesiones${codexError ? '\nCodex no disponible (requiere lsof en macOS/Linux).' : ''}${opencodeError && !codexError ? '\nOpenCode no disponible (requiere lsof/ps/sqlite3 en macOS/Linux).' : ''}${commandcodeError ? '\nCommand Code no disponible (requiere ps/lsof en macOS/Linux).' : ''}`;
+      statusBar.tooltip = `Claude + Codex + OpenCode + Command Code + OpenClaw Semáforo — clic para ver las sesiones${codexError ? '\nCodex no disponible (requiere lsof en macOS/Linux).' : ''}${opencodeError && !codexError ? '\nOpenCode no disponible (requiere lsof/ps/sqlite3 en macOS/Linux).' : ''}${commandcodeError ? '\nCommand Code no disponible (requiere ps/lsof en macOS/Linux).' : ''}${openclawError ? '\nOpenClaw activo pero su base de datos no se pudo leer.' : ''}`;
       dbg(`refresh #${seq} ok: files=${sessions.length} summary=${JSON.stringify(sum)}`);
 
       if (sawUnknownSchema && !warnedSchema) {

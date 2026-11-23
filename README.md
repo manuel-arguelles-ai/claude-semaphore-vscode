@@ -1,6 +1,6 @@
-# Claude + Codex + OpenCode + Command Code Semáforo
+# Claude + Codex + OpenCode + Command Code + OpenClaw Semáforo
 
-A VS Code extension that shows a traffic-light status for live Claude Code, local Codex CLI, OpenCode and Command Code sessions.
+A VS Code extension that shows a traffic-light status for live Claude Code, local Codex CLI, OpenCode, Command Code and OpenClaw sessions.
 
 - 🟢 **running** — the last observed event indicates work is in progress
 - 🟡 **needs input** — waiting for a permission/answer (plays a honk when VS Code is unfocused)
@@ -10,13 +10,15 @@ A VS Code extension that shows a traffic-light status for live Claude Code, loca
 - ? **unknown** — available signals do not establish a state
 
 Shows project groups in the activity bar and total active-session counts in the status bar. The tree shows visible/total counts when filtered.
-Each row identifies its provider, **Claude**, **Codex**, **OpenCode** or **Command Code**.
+Each row identifies its provider: **Claude**, **Codex**, **OpenCode**, **Command Code** or **OpenClaw**.
 Hover an amber row to see *why* it is waiting — a permission prompt, an open dialog.
 
 Prefer it next to your files? Drag the **Sesiones** view onto the Explorer panel;
 VS Code remembers where you put it.
 
 ## Release status
+
+**1.2.0** adds OpenClaw as a fifth provider: sessions come from its own SQLite databases, rows group by agent, and yellow means a pending operator approval (an exact signal, not an inference).
 
 **1.1.4** adds Command Code as a fourth provider: live sessions come from its local transcripts under `~/.commandcode/projects`, paired with their process by start time.
 
@@ -100,6 +102,16 @@ message, and a direct pending `ask_user_question` from yellow. Only the tail is
 read, and nothing is transmitted. Command Code keeps no lock or pid file, so a
 process that started earlier than the last transcript write is never paired.
 
+For OpenClaw, the semaphore reads its own databases: `~/.openclaw/state/openclaw.sqlite`
+lists the agents (`agent_databases`) and holds `operator_approvals`, while each agent
+keeps `agents/<agent>/agent/openclaw-agent.sqlite` with its `session_windows`. The
+gateway is a single process, so it only supplies the pid; state comes from SQL. A
+pending approval on a session is yellow **exactly** — the only provider where that
+signal is explicit. Rows group by agent because OpenClaw has no per-session working
+directory, and duplicates by session id are collapsed per agent (cron records both
+`…:cron:<id>` and `…:cron:<id>:run:<uuid>`). Approvals are matched by session key so
+the same session id in another agent never lights up.
+
 ## Install (local .vsix)
 
 1. `npm install && npm run build && npm run package`
@@ -113,6 +125,8 @@ process that started earlier than the last transcript write is never paired.
 | `claudeSemaphore.opencode.enabled` | `true` | show local OpenCode sessions; requires `lsof`, `ps` and `sqlite3` |
 | `claudeSemaphore.opencode.windowMs` | `10` | activity window (minutes) for cwd-shared OpenCode sessions |
 | `claudeSemaphore.commandcode.enabled` | `true` | show local Command Code sessions; requires `ps` and `lsof` |
+| `claudeSemaphore.openclaw.enabled` | `true` | show local OpenClaw sessions; requires `sqlite3` |
+| `claudeSemaphore.openclaw.windowMs` | `10` | activity window (minutes) for an open OpenClaw session |
 | `claudeSemaphore.theme` | `classic` | `classic` / `colorblind` / `highContrast` |
 | `claudeSemaphore.sound.enabled` | `true` | honk on yellow transition |
 | `claudeSemaphore.sound.file` | (bundled honk) | custom sound path |

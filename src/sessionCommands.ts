@@ -32,7 +32,7 @@ export function registerSessionCommands(context: vscode.ExtensionContext, servic
   });
   register('filters', async () => {
     const options: { label: string; value: string; picked: boolean }[] = [
-      ...(['claude', 'codex', 'opencode', 'commandcode'] as const).map(p => ({ label: `Proveedor: ${p}`, value: `provider:${p}`, picked: services.getView().provider === p })),
+      ...(['claude', 'codex', 'opencode', 'commandcode', 'openclaw'] as const).map(p => ({ label: `Proveedor: ${p}`, value: `provider:${p}`, picked: services.getView().provider === p })),
       ...(Object.keys(stateLabels) as SemaphoreState[]).map(s => ({ label: `Estado: ${stateLabels[s]}`, value: `state:${s}`, picked: services.getView().state === s })),
       { label: 'Solo favoritas', value: 'favorites', picked: services.getView().favoritesOnly },
     ];

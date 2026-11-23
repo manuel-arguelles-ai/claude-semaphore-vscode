@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { SessionState, ThemeName } from './types';
-import { ViewOptions, ProjectGroup, defaultViewOptions, presentSessions, stateLabels, providerLabels } from './sessionPresentation';
+import { ViewOptions, ProjectGroup, defaultViewOptions, presentSessions, stateLabels, providerLabels, groupDisplayName } from './sessionPresentation';
 import { persistentSessionKey, sessionKey } from './sessionIdentity';
 import { styleFor } from './theme';
 import { formatTooltip } from './tooltip';
@@ -35,9 +35,9 @@ export class SessionTree implements vscode.TreeDataProvider<TreeNode>, vscode.Di
   }
   getTreeItem(node: TreeNode): vscode.TreeItem {
     if ('kind' in node) {
-      const item = new vscode.TreeItem(path.basename(node.cwd) || node.cwd || 'Proyecto', vscode.TreeItemCollapsibleState.Expanded);
+      const item = new vscode.TreeItem(groupDisplayName(node.cwd) || 'Proyecto', vscode.TreeItemCollapsibleState.Expanded);
       item.id = node.id; item.description = `${node.sessions.length} sesiones`;
-      item.tooltip = node.cwd; item.iconPath = new vscode.ThemeIcon('folder'); item.contextValue = 'project'; return item;
+      item.tooltip = node.cwd.startsWith('openclaw:') ? `Agente OpenClaw: ${node.cwd.slice(9)}` : node.cwd; item.iconPath = new vscode.ThemeIcon('folder'); item.contextValue = 'project'; return item;
     }
     const s = node; const favorite = this.favorites.has(persistentSessionKey(s));
     const item = new vscode.TreeItem(`${favorite ? '★ ' : ''}${s.title}`, vscode.TreeItemCollapsibleState.None);

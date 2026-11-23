@@ -21,7 +21,7 @@ export function integrateSessions(context: vscode.ExtensionContext, tree: Sessio
   const saved = context.workspaceState.get<Partial<ViewOptions>>('view', {});
   let view = { ...defaultViewOptions(), ...saved };
   if (typeof view.query !== 'string') view.query = '';
-  if (!['claude', 'codex', 'opencode', 'commandcode'].includes(view.provider ?? '')) view.provider = undefined;
+  if (!['claude', 'codex', 'opencode', 'commandcode', 'openclaw'].includes(view.provider ?? '')) view.provider = undefined;
   if (!['running', 'needsInput', 'stopped', 'error', 'unknown'].includes(view.state ?? '')) view.state = undefined;
   view.grouped = typeof view.grouped === 'boolean' ? view.grouped : true;
   view.favoritesOnly = view.favoritesOnly === true;
@@ -107,7 +107,7 @@ export function integrateSessions(context: vscode.ExtensionContext, tree: Sessio
     launch: async request => {
       const spec = buildLaunch(request, await getCapabilities(request.provider));
       const stat = await fs.stat(spec.cwd); if (!stat.isDirectory()) throw new Error('La carpeta de la sesión no existe.');
-      const labels: Record<Provider, string> = { claude: 'Claude', codex: 'Codex', opencode: 'OpenCode', commandcode: 'Command Code' };
+      const labels: Record<Provider, string> = { claude: 'Claude', codex: 'Codex', opencode: 'OpenCode', commandcode: 'Command Code', openclaw: 'OpenClaw' };
       const terminal = vscode.window.createTerminal({ name: `${labels[request.provider]} · ${request.action}`, shellPath: spec.executable, shellArgs: spec.args, cwd: spec.cwd });
       terminal.show(false);
       // Opening a terminal is not evidence that the requested session started successfully.

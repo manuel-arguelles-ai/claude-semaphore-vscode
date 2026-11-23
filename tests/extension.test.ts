@@ -1,13 +1,14 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+import { execFileSync } from 'child_process';
 import type { SessionState } from '../src/types';
 
 const ui = vi.hoisted(() => ({
   root: `/tmp/semaphore-activate-${process.pid}`,
   provider: undefined as any,
   status: { text: '', tooltip: '', show: vi.fn(), dispose: vi.fn() },
-  warnings: vi.fn(), discover: vi.fn(), discoverCommandCode: vi.fn(), watcherDispose: vi.fn(), registrationDispose: vi.fn(),
+  warnings: vi.fn(), discover: vi.fn(), discoverCommandCode: vi.fn(), discoverOpenClaw: vi.fn(), watcherDispose: vi.fn(), registrationDispose: vi.fn(),
   errors: vi.fn(), handlers: new Map<string, Function>(), input: vi.fn(), document: '', saved: new Map<string, unknown>(),
   view: { message: '', dispose: vi.fn() },
   pick: vi.fn(), information: vi.fn(), config: new Map<string, unknown>(),
@@ -21,6 +22,9 @@ vi.mock('../src/terminalLinker', async importOriginal => ({
 }));
 vi.mock('../src/commandcodeSessions', async importOriginal => ({
   ...await importOriginal<typeof import('../src/commandcodeSessions')>(), discoverCommandCodeProcesses: ui.discoverCommandCode,
+}));
+vi.mock('../src/openclawSessions', async importOriginal => ({
+  ...await importOriginal<typeof import('../src/openclawSessions')>(), discoverOpenClawGateway: ui.discoverOpenClaw,
 }));
 vi.mock('vscode', () => {
   const disposable = () => ({ dispose: ui.registrationDispose });
@@ -75,7 +79,7 @@ beforeEach(() => {
     sessionId: 'claude-1', pid: process.pid, cwd: '/work/claude', name: 'Claude project', status: 'busy', kind: 'interactive',
   }));
   ui.discover.mockResolvedValue([]); ui.provider = undefined; ui.status.text = '';
-  ui.discoverCommandCode.mockResolvedValue([]);
+  ui.discoverCommandCode.mockResolvedValue([]); ui.discoverOpenClaw.mockResolvedValue(undefined);
   context = { subscriptions: [], extensionPath: ui.root, globalState: { get: (key: string, fallback: unknown) => ui.saved.get(key) ?? fallback, update: async (key: string, value: unknown) => { ui.saved.set(key, value); } }, workspaceState: { get: (_key: string, fallback: unknown) => fallback, update: async () => {} }, globalStorageUri: { fsPath: path.join(ui.root, 'storage') } } as any;
 });
 afterEach(() => { dispose(); vi.useRealTimers(); fs.rmSync(ui.root, { recursive: true, force: true }); });
@@ -157,6 +161,27 @@ describe('extension activation integration', () => {
     const item = ui.provider.getTreeItem(rows().find((s: SessionState) => s.provider === 'commandcode'));
     expect(item.label).toBe('Command Code task');
     expect(item.description).toBe('Command Code · trabajando');
+  });
+
+  it('shows OpenClaw sessions grouped by agent with a pending approval as needs input', async () => {
+    ui.discoverOpenClaw.mockResolvedValue(process.pid);
+    const stateDb = path.join(ui.root, '.openclaw/state/openclaw.sqlite');
+    const agentDb = path.join(ui.root, '.openclaw/agents/main/agent/openclaw-agent.sqlite');
+    fs.mkdirSync(path.dirname(stateDb), { recursive: true });
+    fs.mkdirSync(path.dirname(agentDb), { recursive: true });
+    const sq = (file: string, sql: string) => execFileSync('sqlite3', [file, sql], { encoding: 'utf8' });
+    sq(stateDb, `CREATE TABLE agent_databases (agent_id TEXT PRIMARY KEY, path TEXT NOT NULL);
+      CREATE TABLE operator_approvals (approval_id TEXT PRIMARY KEY, status TEXT NOT NULL, source_session_key TEXT, source_session_id TEXT);
+      INSERT INTO agent_databases VALUES ('main', 'agents/main/agent/openclaw-agent.sqlite');
+      INSERT INTO operator_approvals VALUES ('a1','pending','agent:main:main','s1');`);
+    const t = Date.now();
+    sq(agentDb, `CREATE TABLE session_windows (session_id TEXT PRIMARY KEY, session_key TEXT NOT NULL, status TEXT,
+        started_at INTEGER, ended_at INTEGER, updated_at INTEGER, transcript_updated_at INTEGER, display_name TEXT, channel TEXT);
+      INSERT INTO session_windows VALUES ('s1','agent:main:main',NULL,${t - 60000},NULL,${t - 30000},${t - 30000},'tarea en curso','telegram');`);
+    activate(context as any);
+    await vi.waitFor(() => expect(rows().some((s: SessionState) => s.provider === 'openclaw')).toBe(true));
+    const item = ui.provider.getTreeItem(rows().find((s: SessionState) => s.provider === 'openclaw'));
+    expect(item.description).toBe('OpenClaw · necesita respuesta');
   });
 
   it('merges providers with labels, summary counts and distinct thread identities sharing a PID', async () => {

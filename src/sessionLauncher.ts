@@ -12,11 +12,14 @@ export function buildLaunch(request: LaunchRequest, capabilities: AgentCapabilit
       if (request.action === 'resume' && request.nativePicker && !id) {
         if (request.provider === 'claude') return { executable: capabilities.executable, args: ['--resume'], cwd: request.cwd };
         if (request.provider === 'opencode') return { executable: capabilities.executable, args: ['-c'], cwd: request.cwd };
+        if (request.provider === 'commandcode') return { executable: capabilities.executable, args: ['--resume'], cwd: request.cwd };
         return { executable: capabilities.executable, args: ['resume'], cwd: request.cwd };
       }
       if (!id || !/^[a-zA-Z0-9_][a-zA-Z0-9_-]{0,199}$/.test(id)) throw new Error('ID de sesión no válido.');
       if (request.provider === 'opencode') {
         args = ['-s', id, ...(request.action === 'fork' ? ['--fork'] : [])];
+      } else if (request.provider === 'commandcode') {
+        args = ['--resume', id, ...(request.action === 'fork' ? ['--fork-session'] : [])];
       } else {
         args = request.provider === 'claude' ? ['--resume', id, ...(request.action === 'fork' ? ['--fork-session'] : [])] : [request.action, id];
       }

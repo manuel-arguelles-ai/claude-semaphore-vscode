@@ -7,7 +7,7 @@ const ui = vi.hoisted(() => ({
   root: `/tmp/semaphore-activate-${process.pid}`,
   provider: undefined as any,
   status: { text: '', tooltip: '', show: vi.fn(), dispose: vi.fn() },
-  warnings: vi.fn(), discover: vi.fn(), watcherDispose: vi.fn(), registrationDispose: vi.fn(),
+  warnings: vi.fn(), discover: vi.fn(), discoverCommandCode: vi.fn(), watcherDispose: vi.fn(), registrationDispose: vi.fn(),
   errors: vi.fn(), handlers: new Map<string, Function>(), input: vi.fn(), document: '', saved: new Map<string, unknown>(),
   view: { message: '', dispose: vi.fn() },
   pick: vi.fn(), information: vi.fn(), config: new Map<string, unknown>(),
@@ -18,6 +18,9 @@ vi.mock('../src/codexSessions', async importOriginal => ({
 }));
 vi.mock('../src/terminalLinker', async importOriginal => ({
   ...await importOriginal<typeof import('../src/terminalLinker')>(), psParentPid: async () => undefined,
+}));
+vi.mock('../src/commandcodeSessions', async importOriginal => ({
+  ...await importOriginal<typeof import('../src/commandcodeSessions')>(), discoverCommandCodeProcesses: ui.discoverCommandCode,
 }));
 vi.mock('vscode', () => {
   const disposable = () => ({ dispose: ui.registrationDispose });
@@ -72,6 +75,7 @@ beforeEach(() => {
     sessionId: 'claude-1', pid: process.pid, cwd: '/work/claude', name: 'Claude project', status: 'busy', kind: 'interactive',
   }));
   ui.discover.mockResolvedValue([]); ui.provider = undefined; ui.status.text = '';
+  ui.discoverCommandCode.mockResolvedValue([]);
   context = { subscriptions: [], extensionPath: ui.root, globalState: { get: (key: string, fallback: unknown) => ui.saved.get(key) ?? fallback, update: async (key: string, value: unknown) => { ui.saved.set(key, value); } }, workspaceState: { get: (_key: string, fallback: unknown) => fallback, update: async () => {} }, globalStorageUri: { fsPath: path.join(ui.root, 'storage') } } as any;
 });
 afterEach(() => { dispose(); vi.useRealTimers(); fs.rmSync(ui.root, { recursive: true, force: true }); });
@@ -137,6 +141,24 @@ describe('extension activation integration', () => {
     await ui.handlers.get('claudeSemaphore.details')!(row); expect(ui.document).toContain('Tiempo observado');
     expect(ui.saved.get('favorites')).toEqual(['["claude","claude-1"]']);
   });
+  it('shows a live Command Code session read from its transcript with the Command Code label', async () => {
+    const id = 'bbbbbbbb-0000-0000-0000-000000000001';
+    const dir = path.join(ui.root, '.commandcode/projects/users-work-cmd');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, `${id}.jsonl`), [
+      { type: 'session', version: 3, id, timestamp: new Date(Date.now() - 60000).toISOString(), cwd: '/work/cmd' },
+      { type: 'message', id: 'm1', parentId: null, timestamp: new Date().toISOString(),
+        message: { role: 'assistant', content: [{ type: 'tool_use', id: 't', name: 'read_file', input: {} }], meta: { source: 'model' } } },
+    ].map(r => JSON.stringify(r)).join('\n') + '\n');
+    fs.writeFileSync(path.join(dir, `${id}.meta.json`), JSON.stringify({ title: 'Command Code task' }));
+    ui.discoverCommandCode.mockResolvedValue([{ pid: process.pid, startMs: Date.now() - 60000, cwd: '/work/cmd' }]);
+    activate(context as any);
+    await vi.waitFor(() => expect(rows()).toHaveLength(2));
+    const item = ui.provider.getTreeItem(rows().find((s: SessionState) => s.provider === 'commandcode'));
+    expect(item.label).toBe('Command Code task');
+    expect(item.description).toBe('Command Code · trabajando');
+  });
+
   it('merges providers with labels, summary counts and distinct thread identities sharing a PID', async () => {
     ui.discover.mockResolvedValue([rollout('codex-a', 'task_started'), rollout('codex-b', 'task_complete')]);
     activate(context as any);

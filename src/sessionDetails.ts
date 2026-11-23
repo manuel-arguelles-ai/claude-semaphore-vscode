@@ -1,10 +1,10 @@
 import { RecordedSession, observedDurations } from './sessionJournal';
-import { stateLabels } from './sessionPresentation';
+import { providerLabels, stateLabels } from './sessionPresentation';
 const safe = (text: string) => text.replace(/[\x00-\x08\x0b-\x1f\x7f]/g, ' ');
 export function formatSessionDetails(session: RecordedSession): string {
   const last = session.events[session.events.length - 1];
   const durations = observedDurations(session);
-  return [safe(session.title), `Proveedor: ${session.provider}`, `Proyecto: ${safe(session.cwd)}`, `Sesión: ${session.sessionId}`,
+  return [safe(session.title), `Proveedor: ${providerLabels[session.provider] ?? session.provider}`, `Proyecto: ${safe(session.cwd)}`, `Sesión: ${session.sessionId}`,
     `Estado: ${last?.state === 'offline' ? 'No observada actualmente' : last ? stateLabels[last.state] : 'Desconocido'}`,
     `Última observación: ${new Date(session.lastSeenAt).toLocaleString()}`,
     `Fuente: ${last?.source ?? 'sin señal'} · motivo: ${last?.reason ?? 'sin señal'}`, '', 'Tiempo observado (sin contar el editor cerrado):',

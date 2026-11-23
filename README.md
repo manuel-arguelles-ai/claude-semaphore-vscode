@@ -1,6 +1,6 @@
-# Claude + Codex + OpenCode Semáforo
+# Claude + Codex + OpenCode + Command Code Semáforo
 
-A VS Code extension that shows a traffic-light status for live Claude Code, local Codex CLI and OpenCode sessions.
+A VS Code extension that shows a traffic-light status for live Claude Code, local Codex CLI, OpenCode and Command Code sessions.
 
 - 🟢 **running** — the last observed event indicates work is in progress
 - 🟡 **needs input** — waiting for a permission/answer (plays a honk when VS Code is unfocused)
@@ -10,13 +10,15 @@ A VS Code extension that shows a traffic-light status for live Claude Code, loca
 - ? **unknown** — available signals do not establish a state
 
 Shows project groups in the activity bar and total active-session counts in the status bar. The tree shows visible/total counts when filtered.
-Each row identifies its provider, **Claude**, **Codex** or **OpenCode**.
+Each row identifies its provider, **Claude**, **Codex**, **OpenCode** or **Command Code**.
 Hover an amber row to see *why* it is waiting — a permission prompt, an open dialog.
 
 Prefer it next to your files? Drag the **Sesiones** view onto the Explorer panel;
 VS Code remembers where you put it.
 
 ## Release status
+
+**1.1.4** adds Command Code as a fourth provider: live sessions come from its local transcripts under `~/.commandcode/projects`, paired with their process by start time.
 
 **1.1.3** shows Claude sessions that finished their turn but still have a background shell or agent running as working (green) instead of idle/finished.
 
@@ -87,6 +89,17 @@ attributed by `-s/--session` argument when present, otherwise by a recent-activi
 window for the process working directory. Pending permission prompts are not
 observable this way; the row tooltip says so explicitly.
 
+For Command Code, live `command-code` processes are discovered with `ps` and
+`lsof`, and each one is paired with the transcript it writes under
+`~/.commandcode/projects/<slug>/<session-id>.jsonl`. A new session is matched by
+its process start time against the transcript's own creation header; a resumed
+session, whose header keeps the original creation time, is matched to the most
+recent process in the same working directory. Running comes from a still-open
+tool call (or a recorded tool result), idle/completed from a finished assistant
+message, and a direct pending `ask_user_question` from yellow. Only the tail is
+read, and nothing is transmitted. Command Code keeps no lock or pid file, so a
+process that started earlier than the last transcript write is never paired.
+
 ## Install (local .vsix)
 
 1. `npm install && npm run build && npm run package`
@@ -99,6 +112,7 @@ observable this way; the row tooltip says so explicitly.
 | `claudeSemaphore.codex.enabled` | `true` | show local Codex CLI sessions; no restart needed |
 | `claudeSemaphore.opencode.enabled` | `true` | show local OpenCode sessions; requires `lsof`, `ps` and `sqlite3` |
 | `claudeSemaphore.opencode.windowMs` | `10` | activity window (minutes) for cwd-shared OpenCode sessions |
+| `claudeSemaphore.commandcode.enabled` | `true` | show local Command Code sessions; requires `ps` and `lsof` |
 | `claudeSemaphore.theme` | `classic` | `classic` / `colorblind` / `highContrast` |
 | `claudeSemaphore.sound.enabled` | `true` | honk on yellow transition |
 | `claudeSemaphore.sound.file` | (bundled honk) | custom sound path |
@@ -106,6 +120,7 @@ observable this way; the row tooltip says so explicitly.
 | `claudeSemaphore.claude.path` | `claude` | executable path or detected command |
 | `claudeSemaphore.codex.path` | `codex` | executable path or detected command |
 | `claudeSemaphore.opencode.path` | `opencode` | executable path or detected command |
+| `claudeSemaphore.commandcode.path` | `command-code` | executable path or detected command |
 | `claudeSemaphore.hooks.nodePath` | `node` | Node.js 18+ executable for optional signals |
 | `claudeSemaphore.debug` | `false` | emit `[ClaudeSemaforo]` diagnostic logs to the extension host console |
 

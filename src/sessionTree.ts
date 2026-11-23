@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { SessionState, ThemeName } from './types';
-import { ViewOptions, ProjectGroup, defaultViewOptions, presentSessions, stateLabels } from './sessionPresentation';
+import { ViewOptions, ProjectGroup, defaultViewOptions, presentSessions, stateLabels, providerLabels } from './sessionPresentation';
 import { persistentSessionKey, sessionKey } from './sessionIdentity';
 import { styleFor } from './theme';
 import { formatTooltip } from './tooltip';
@@ -44,7 +44,7 @@ export class SessionTree implements vscode.TreeDataProvider<TreeNode>, vscode.Di
     const label = `${stateLabels[s.state]}${s.duplicateTitle ? ` · pid ${s.pid}` : ''}`;
     const terminal = this.terminals.has(sessionKey(s)) || this.terminals.has(s.pid);
     const style = styleFor(this.theme(), s.state);
-    item.id = sessionKey(s); item.description = `${s.provider === 'codex' ? 'Codex' : s.provider === 'opencode' ? 'OpenCode' : 'Claude'} · ${label}`;
+    item.id = sessionKey(s); item.description = `${providerLabels[s.provider ?? 'claude']} · ${label}`;
     item.tooltip = formatTooltip(s, label, terminal);
     item.iconPath = new vscode.ThemeIcon(style.icon, style.colorId ? new vscode.ThemeColor(style.colorId) : undefined);
     item.contextValue = terminal ? 'sessionWithTerminal' : 'session';

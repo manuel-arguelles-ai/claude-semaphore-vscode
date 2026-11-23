@@ -1,8 +1,8 @@
 {
   "name": "claude-semaphore",
-  "displayName": "Claude + Codex + OpenCode Semáforo",
-  "description": "Organize, inspect and manage local Claude Code, Codex and OpenCode sessions in VS Code, with optional lifecycle signals.",
-  "version": "1.1.3",
+  "displayName": "Claude + Codex + OpenCode + Command Code Semáforo",
+  "description": "Organize, inspect and manage local Claude Code, Codex, OpenCode and Command Code sessions in VS Code, with optional lifecycle signals.",
+  "version": "1.1.4",
   "publisher": "manuelarguelles",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -23,7 +23,8 @@
     "status",
     "semaphore",
     "traffic light",
-    "codex"
+    "codex",
+    "command-code"
   ],
   "engines": {
     "vscode": "^1.85.0"
@@ -42,7 +43,7 @@
       "activitybar": [
         {
           "id": "claudeSemaphore",
-          "title": "Claude + Codex + OpenCode Semáforo",
+          "title": "Claude + Codex + OpenCode + Command Code Semáforo",
           "icon": "media/icon.svg"
         }
       ]
@@ -56,7 +57,7 @@
       ]
     },
     "configuration": {
-      "title": "Claude + Codex + OpenCode Semáforo",
+      "title": "Claude + Codex + OpenCode + Command Code Semáforo",
       "properties": {
         "claudeSemaphore.theme": {
           "type": "string",
@@ -117,6 +118,16 @@
           "type": "string",
           "default": "opencode",
           "description": "Ruta al ejecutable de opencode. Se detecta desde PATH y ubicaciones comunes."
+        },
+        "claudeSemaphore.commandcode.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show local Command Code sessions (macOS/Linux; requires ps and lsof). Reads its local transcripts only; pending permission prompts cannot be detected."
+        },
+        "claudeSemaphore.commandcode.path": {
+          "type": "string",
+          "default": "command-code",
+          "description": "Ruta al ejecutable de command-code. Se detecta desde PATH y ubicaciones comunes."
         },
         "claudeSemaphore.hooks.nodePath": {
           "type": "string",
@@ -405,6 +416,7 @@
         "claudeSemaphore.claude.path",
         "claudeSemaphore.codex.path",
         "claudeSemaphore.opencode.path",
+        "claudeSemaphore.commandcode.path",
         "claudeSemaphore.hooks.nodePath"
       ]
     }

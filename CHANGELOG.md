@@ -1,3 +1,10 @@
+# 1.1.4
+
+- Add Command Code as a fourth provider: live sessions are read from its local transcripts (`~/.commandcode/projects/<slug>/<session-id>.jsonl`) and paired with their process by start time, with a most-recent-in-cwd fallback for resumed sessions.
+- State comes from the transcript tail only: an open tool call or tool result means working; a finished assistant message means idle/completed; a direct pending `ask_user_question` means needs input. Pending permission prompts are not observable and the tooltip says so.
+- Start, resume (`--resume`) and fork (`--resume <id> --fork-session`) and the native picker for Command Code; hooks configuration is not offered.
+- New settings `commandcode.enabled` and `commandcode.path`. Requires `ps` and `lsof` on macOS/Linux; Claude, Codex and OpenCode keep working if discovery fails.
+
 # 1.1.3
 
 - Claude sessions reporting `shell` (turn finished but a background shell or agent is still running) are now shown as working (green) instead of idle/finished.

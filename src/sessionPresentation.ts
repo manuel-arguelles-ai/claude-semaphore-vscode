@@ -7,6 +7,9 @@ export function defaultViewOptions(): ViewOptions { return { query: '', favorite
 export const stateLabels: Record<SemaphoreState, string> = {
   running: 'trabajando', needsInput: 'necesita respuesta', stopped: 'inactivo / finalizado', error: 'error observado', unknown: 'desconocido',
 };
+export const providerLabels: Record<Provider, string> = {
+  claude: 'Claude', codex: 'Codex', opencode: 'OpenCode', commandcode: 'Command Code',
+};
 const priority: Record<SemaphoreState, number> = { needsInput: 0, error: 1, running: 2, stopped: 3, unknown: 4 };
 export function presentSessions(sessions: SessionState[], options: ViewOptions, favorites: ReadonlySet<string>): ProjectGroup[] {
   const query = options.query.trim().toLocaleLowerCase();

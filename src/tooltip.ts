@@ -18,6 +18,11 @@ export function formatTooltip(s: SessionState, label: string, hasTerminal: boole
     lines.push('Las preguntas de permisos pendientes pueden no detectarse.');
     if (s.state === 'unknown') lines.push('No hay un evento suficiente para determinar el estado.');
   }
+  if (s.provider === 'commandcode') {
+    lines.push('Command Code · estado observado en su transcripción local');
+    lines.push('Solo se distinguen turno en curso, finalizado y pregunta explícita pendiente.');
+    if (s.state === 'unknown') lines.push('No hay un registro suficiente para determinar el estado.');
+  }
   if (!hasTerminal) {
     lines.push('(sin terminal en esta ventana)');
   }

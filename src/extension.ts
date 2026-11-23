@@ -4,6 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { CodexReader, discoverCodexRollouts, OpenRollout } from './codexSessions';
 import { OpenCodeReader, discoverOpenCodeProcesses, OpenCodeProcess } from './opencodeSessions';
+import { CommandCodeReader, discoverCommandCodeProcesses, CommandCodeProcess } from './commandcodeSessions';
 import { sessionKey, persistentSessionKey } from './sessionIdentity';
 import { SessionTree } from './sessionTree';
 import { integrateSessions } from './sessionIntegration';
@@ -126,6 +127,12 @@ export function activate(context: vscode.ExtensionContext): void {
   let nextOpencodeDiscovery = 0;
   let opencodeError = false;
   let warnedOpencode = false;
+
+  const commandcodeReader = new CommandCodeReader();
+  let commandcodeProcesses: CommandCodeProcess[] = [];
+  let nextCommandCodeDiscovery = 0;
+  let commandcodeError = false;
+  let warnedCommandCode = false;
   let refreshing = false;
   let disposed = false;
   context.subscriptions.push({ dispose: () => { disposed = true; } });
@@ -200,6 +207,33 @@ export function activate(context: vscode.ExtensionContext): void {
       } else {
         opencodeProcesses = []; opencodeError = opencodeEnabled && process.platform === 'win32';
       }
+
+      const commandcodeEnabled = vscode.workspace.getConfiguration('claudeSemaphore').get<boolean>('commandcode.enabled', true);
+      if (commandcodeEnabled && process.platform !== 'win32') {
+        if (Date.now() >= nextCommandCodeDiscovery) {
+          nextCommandCodeDiscovery = Date.now() + 10000;
+          try {
+            commandcodeProcesses = await discoverCommandCodeProcesses();
+            commandcodeError = false;
+          } catch {
+            commandcodeProcesses = [];
+            if (!warnedCommandCode) {
+              warnedCommandCode = true;
+              vscode.window.showWarningMessage('Semáforo: no se pudo consultar Command Code con ps/lsof. Claude, Codex y OpenCode siguen disponibles.');
+            }
+          }
+        }
+        const commandcodeLive = commandcodeProcesses.filter(p => isAlive(p.pid));
+        try {
+          const commandcodeSessions = await commandcodeReader.read(commandcodeLive);
+          sessions.push(...commandcodeSessions);
+          commandcodeError = false;
+        } catch {
+          commandcodeError = commandcodeLive.length > 0;
+        }
+      } else {
+        commandcodeProcesses = []; commandcodeError = commandcodeEnabled && process.platform === 'win32';
+      }
       sessions.sort((a, b) => a.title.localeCompare(b.title) || sessionKey(a).localeCompare(sessionKey(b)));
       if (disposed) return;
       const events = await readSessionEvents(integration.eventsDirectory, Date.now(), sessions);
@@ -227,7 +261,7 @@ export function activate(context: vscode.ExtensionContext): void {
       if (sum.unknown) statusBar.text += ` $(question)${sum.unknown}`;
       if (sum.error) statusBar.text += ` ${styleFor(theme, 'error').summaryGlyph}${sum.error}`;
       if (codexError) statusBar.text += ' $(warning)';
-      statusBar.tooltip = `Claude + Codex + OpenCode Semáforo — clic para ver las sesiones${codexError ? '\nCodex no disponible (requiere lsof en macOS/Linux).' : ''}${opencodeError && !codexError ? '\nOpenCode no disponible (requiere lsof/ps/sqlite3 en macOS/Linux).' : ''}`;
+      statusBar.tooltip = `Claude + Codex + OpenCode + Command Code Semáforo — clic para ver las sesiones${codexError ? '\nCodex no disponible (requiere lsof en macOS/Linux).' : ''}${opencodeError && !codexError ? '\nOpenCode no disponible (requiere lsof/ps/sqlite3 en macOS/Linux).' : ''}${commandcodeError ? '\nCommand Code no disponible (requiere ps/lsof en macOS/Linux).' : ''}`;
       dbg(`refresh #${seq} ok: files=${sessions.length} summary=${JSON.stringify(sum)}`);
 
       if (sawUnknownSchema && !warnedSchema) {
